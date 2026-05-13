@@ -1,0 +1,11 @@
+pandas
+torch
+transformers
+polars
+langdetect
+google-api-python-client
+matplotlib
+seaborn
+tqdm
+huggingface_hub
+google
