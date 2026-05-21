@@ -8,4 +8,4 @@ matplotlib
 seaborn
 tqdm
 huggingface_hub
-google
+google-genai
