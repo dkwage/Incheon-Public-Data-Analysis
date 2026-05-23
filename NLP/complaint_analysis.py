@@ -71,10 +71,16 @@ kiwi = Kiwi()
 # 1. 데이터 로드
 # ══════════════════════════════════════════════
 
-def load_and_clean(file_path: str) -> pd.DataFrame:
+def load_and_clean(file_path: str, yt_path: str = "YT.csv") -> pd.DataFrame:
     df = pd.read_csv(file_path)
     df = df.drop_duplicates(subset=["comment"]).dropna(subset=["comment"])
     df["comment"] = df["comment"].str.replace(r"\s+", " ", regex=True).str.strip()
+    
+    if os.path.exists(yt_path):
+        yt_df = pd.read_csv(yt_path)
+        if 'title' in yt_df.columns and 'topic' in yt_df.columns and 'content' in yt_df.columns:
+            df = pd.merge(df, yt_df[['title', 'topic', 'content']], on='title', how='left')
+            
     return df.reset_index(drop=True)
 
 
@@ -384,6 +390,16 @@ def run_pipeline(input_csv: str = "youtube_results.csv"):
     negative_df = final_df[final_df["sentiment_label"] == "부정"].copy()
     positive_df = final_df[final_df["sentiment_label"] == "긍정/중립"].copy()
 
+    # 교차 집계: topic x content x positive_type
+    cross_tab = pd.DataFrame()
+    if "topic" in positive_df.columns and "content" in positive_df.columns and "positive_type" in positive_df.columns:
+        cross_tab = pd.crosstab(
+            [positive_df["topic"], positive_df["content"]],
+            positive_df["positive_type"],
+            margins=True, margins_name="총계"
+        )
+        cross_tab.to_csv("michuhol_positive_crosstab.csv", encoding="utf-8-sig")
+
     performance = (
         final_df.groupby("title")
         .agg(
@@ -401,7 +417,7 @@ def run_pipeline(input_csv: str = "youtube_results.csv"):
     print("\n[Step 5] 워드클라우드 생성 중...")
     pos_freq = extract_keyword_freq(positive_df["comment"].tolist())
     neg_freq = extract_keyword_freq(negative_df["comment"].tolist())
-    save_wordcloud(pos_freq, "긍정 댓글 키워드", "michuhol_wordcloud_positive.png", colormap="YlGn")
+    save_wordcloud(pos_freq, "긍정 댓글 키워드", "michuhol_wordcloud_positive.png", colormap="Blues")
     save_wordcloud(neg_freq, "부정 댓글 키워드", "michuhol_wordcloud_negative.png", colormap="Reds")
 
     # ── Step 6: 저장 ──────────────────────────────
@@ -431,6 +447,10 @@ def run_pipeline(input_csv: str = "youtube_results.csv"):
             bar = "█" * int(cnt / max(pos_type_counts) * 20)
             print(f"  {ptype:<14} {cnt:>4}건  {bar}")
 
+    if not cross_tab.empty:
+        print("\n[ 긍정 댓글 교차 집계 (Topic x Content x Positive_Type) ]")
+        print(cross_tab)
+
     if len(complaint_df) > 0:
         print("\n[ 민원 목록 ]")
         for i, r in complaint_df.reset_index(drop=True).iterrows():
@@ -447,6 +467,7 @@ def run_pipeline(input_csv: str = "youtube_results.csv"):
         "michuhol_analysis_raw.csv",
         "michuhol_negative_comments.csv",
         "michuhol_positive_comments.csv",
+        "michuhol_positive_crosstab.csv",
         "michuhol_performance_report.csv",
         "michuhol_wordcloud_positive.png",
         "michuhol_wordcloud_negative.png",
