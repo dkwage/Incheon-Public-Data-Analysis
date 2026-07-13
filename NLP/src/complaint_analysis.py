@@ -71,7 +71,7 @@ kiwi = Kiwi()
 # 1. 데이터 로드
 # ══════════════════════════════════════════════
 
-def load_and_clean(file_path: str, yt_path: str = "YT.csv") -> pd.DataFrame:
+def load_and_clean(file_path: str, yt_path: str = "data/YT.csv") -> pd.DataFrame:
     df = pd.read_csv(file_path)
     df = df.drop_duplicates(subset=["comment"]).dropna(subset=["comment"])
     df["comment"] = df["comment"].str.replace(r"\s+", " ", regex=True).str.strip()
@@ -288,7 +288,7 @@ def save_wordcloud(freq: dict, title: str, save_path: str, colormap: str):
 # 6. 메인 파이프라인
 # ══════════════════════════════════════════════
 
-def run_pipeline(input_csv: str = "youtube_results.csv"):
+def run_pipeline(input_csv: str = "data/youtube_results.csv"):
     df = load_and_clean(input_csv)
     print(f"총 {len(df)}건 로드 완료\n")
 
@@ -398,7 +398,7 @@ def run_pipeline(input_csv: str = "youtube_results.csv"):
             positive_df["positive_type"],
             margins=True, margins_name="총계"
         )
-        cross_tab.to_csv("michuhol_positive_crosstab.csv", encoding="utf-8-sig")
+        cross_tab.to_csv("results/michuhol_positive_crosstab.csv", encoding="utf-8-sig")
 
     performance = (
         final_df.groupby("title")
@@ -417,14 +417,14 @@ def run_pipeline(input_csv: str = "youtube_results.csv"):
     print("\n[Step 5] 워드클라우드 생성 중...")
     pos_freq = extract_keyword_freq(positive_df["comment"].tolist())
     neg_freq = extract_keyword_freq(negative_df["comment"].tolist())
-    save_wordcloud(pos_freq, "긍정 댓글 키워드", "michuhol_wordcloud_positive.png", colormap="Blues")
-    save_wordcloud(neg_freq, "부정 댓글 키워드", "michuhol_wordcloud_negative.png", colormap="Reds")
+    save_wordcloud(pos_freq, "긍정 댓글 키워드", "figures/michuhol_wordcloud_positive.png", colormap="Blues")
+    save_wordcloud(neg_freq, "부정 댓글 키워드", "figures/michuhol_wordcloud_negative.png", colormap="Reds")
 
     # ── Step 6: 저장 ──────────────────────────────
-    final_df.to_csv("michuhol_analysis_raw.csv",         index=False, encoding="utf-8-sig")
-    negative_df.to_csv("michuhol_negative_comments.csv", index=False, encoding="utf-8-sig")
-    positive_df.to_csv("michuhol_positive_comments.csv", index=False, encoding="utf-8-sig")
-    performance.to_csv("michuhol_performance_report.csv",               encoding="utf-8-sig")
+    final_df.to_csv("results/michuhol_analysis_raw.csv",         index=False, encoding="utf-8-sig")
+    negative_df.to_csv("results/michuhol_negative_comments.csv", index=False, encoding="utf-8-sig")
+    positive_df.to_csv("results/michuhol_positive_comments.csv", index=False, encoding="utf-8-sig")
+    performance.to_csv("results/michuhol_performance_report.csv",               encoding="utf-8-sig")
 
     # ── 요약 출력 ─────────────────────────────────
     complaint_df    = final_df[final_df["is_complaint"]].copy()
@@ -464,13 +464,13 @@ def run_pipeline(input_csv: str = "youtube_results.csv"):
 
     print("\n저장 완료:")
     for f in [
-        "michuhol_analysis_raw.csv",
-        "michuhol_negative_comments.csv",
-        "michuhol_positive_comments.csv",
-        "michuhol_positive_crosstab.csv",
-        "michuhol_performance_report.csv",
-        "michuhol_wordcloud_positive.png",
-        "michuhol_wordcloud_negative.png",
+        "results/michuhol_analysis_raw.csv",
+        "results/michuhol_negative_comments.csv",
+        "results/michuhol_positive_comments.csv",
+        "results/michuhol_positive_crosstab.csv",
+        "results/michuhol_performance_report.csv",
+        "figures/michuhol_wordcloud_positive.png",
+        "figures/michuhol_wordcloud_negative.png",
     ]:
         print(f"  - {f}")
 
@@ -481,4 +481,4 @@ def run_pipeline(input_csv: str = "youtube_results.csv"):
 # 실행
 # ══════════════════════════════════════════════
 if __name__ == "__main__":
-    run_pipeline("youtube_results.csv")
+    run_pipeline("data/youtube_results.csv")

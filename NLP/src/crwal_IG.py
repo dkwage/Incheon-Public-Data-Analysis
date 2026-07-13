@@ -29,9 +29,9 @@ INSTA_USERNAME = os.getenv("INSTA_USERNAME")
 INSTA_PASSWORD = os.getenv("INSTA_PASSWORD")
 if not INSTA_USERNAME or not INSTA_PASSWORD:
     raise RuntimeError("INSTA_USERNAME, INSTA_PASSWORD 환경 변수가 필요합니다.")
-INPUT_FILE = "IG.csv"
-LEGACY_INPUT_FILE = "target_links.csv"
-OUTPUT_CSV = "insta_results.csv"
+INPUT_FILE = "data/IG.csv"
+LEGACY_INPUT_FILE = "data/target_links.csv"
+OUTPUT_CSV = "data/insta_results.csv"
 SESSION_FILE = "insta_session.json"
 MAX_INSTA_COMMENTS = 30
 SAVE_EVERY = 3 # 인스타는 더 자주 저장하는 것이 안전

@@ -29,8 +29,8 @@ load_local_env()
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 if not YOUTUBE_API_KEY:
     raise RuntimeError("YOUTUBE_API_KEY 환경 변수가 필요합니다.")
-INPUT_FILE = "YT.csv"
-OUTPUT_CSV = "youtube_results1.csv"
+INPUT_FILE = "data/YT.csv"
+OUTPUT_CSV = "data/youtube_results1.csv"
 MAX_YT_COMMENTS = 500  # 영상 하나당 최대 수집 댓글 수
 SAVE_EVERY = 5
 
