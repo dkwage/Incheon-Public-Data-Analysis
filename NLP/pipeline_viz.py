@@ -13,6 +13,7 @@ from pathlib import Path
 from IPython.display import display, HTML
 
 STATUS_FILE = Path("pipeline_status.json")
+DIAGRAM_PATH = "docs/pipeline_architecture.diagram.ko.html?theme=light"
 
 COLORS = {
     "pending": ("#e2e8f0", "#64748b"),
@@ -145,6 +146,16 @@ class _QuietHandler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *args, **kwargs):  # 접근 로그 출력 안 함
         pass
 
+    def end_headers(self):
+        # 대시보드·다이어그램을 고쳐도 브라우저가 304로 옛 파일을 재사용하지 않게 한다.
+        self.send_header("Cache-Control", "no-store, must-revalidate")
+        super().end_headers()
+
+    def send_header(self, keyword, value):
+        if keyword.lower() == "last-modified":   # 조건부 요청 자체를 막는다
+            return
+        super().send_header(keyword, value)
+
 
 _server = None  # 중복 실행 방지
 
@@ -172,3 +183,17 @@ def start_dashboard(port=8765, directory="."):
     url = f"http://127.0.0.1:{port}/pipeline_dashboard.html"
     print(f"대시보드: {url}")
     return url
+
+
+def show_diagram(height=520):
+    """대시보드와 같은 구조 다이어그램을 노트북 셀 출력에 띄운다.
+
+    start_dashboard() 로 띄운 로컬 서버를 통해 불러온다. 서버가 없으면
+    안내만 출력한다 (다이어그램 파일 자체는 브라우저로 직접 열어도 동작)."""
+    from IPython.display import IFrame
+
+    if _server is None:
+        print(f"start_dashboard() 를 먼저 실행하세요. 파일: {DIAGRAM_PATH}")
+        return None
+    port = _server.server_address[1]
+    return IFrame(f"http://127.0.0.1:{port}/{DIAGRAM_PATH}", width="100%", height=height)
