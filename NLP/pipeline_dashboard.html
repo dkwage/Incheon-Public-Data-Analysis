@@ -1,0 +1,615 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>미추홀구 민원 분석 파이프라인</title>
+    <style>
+      /* 팔레트는 docs/pipeline_architecture.ko.html 의 라이트 테마 토큰을 그대로 쓴다.
+         다이어그램과 대시보드가 같은 색·같은 여백 체계를 공유해야 한 화면으로 읽힌다. */
+      :root {
+        --bg: #f8fafc;
+        --panel: #ffffff;
+        --panel-border: #e2e8f0;
+        --lane-fill: rgba(248, 250, 252, 0.65);
+        --lane-stroke: #cbd5e1;
+
+        --text: #0f172a;
+        --text-muted: #64748b;
+        --text-dim: #94a3b8;
+
+        --accent: #0891b2;
+        --done: #059669;
+        --running: #d97706;
+        --error: #e11d48;
+
+        --radius: 12px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          "Apple SD Gothic Neo",
+          "Malgun Gothic",
+          "Noto Sans KR",
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        margin: 0;
+        padding: 0 clamp(20px, 4vw, 64px) 96px;
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ---------- 헤더 ---------- */
+      header {
+        padding: clamp(28px, 3vw, 48px) 0 24px;
+        border-bottom: 1px solid var(--panel-border);
+        margin-bottom: clamp(24px, 2.6vw, 36px);
+      }
+      .overline {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11.5px;
+        letter-spacing: 0.14em;
+        color: var(--text-muted);
+        font-weight: 600;
+        margin-bottom: 14px;
+        border: 1px solid var(--panel-border);
+        border-radius: 999px;
+        padding: 5px 12px;
+        background: var(--panel);
+      }
+      .overline::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--done);
+      }
+      h1 {
+        font-size: clamp(21px, 2.1vw, 30px);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin: 0 0 8px;
+        line-height: 1.3;
+        color: var(--text);
+      }
+      .lede {
+        color: var(--text-muted);
+        font-size: clamp(13px, 0.95vw, 14.5px);
+        margin: 0;
+      }
+
+      /* ---------- 시스템 구조 다이어그램 ----------
+         archify 다이어그램은 .card / .container / .header 등 이 파일과 겹치는
+         클래스명을 쓴다. iframe 으로 격리해야 양쪽 CSS·JS가 서로를 깨뜨리지 않고
+         다이어그램의 상호작용(경로 추적, 노드 집중, 확대)이 그대로 살아 있다. */
+      .diagram-panel {
+        border: 1px solid var(--panel-border);
+        border-radius: var(--radius);
+        background: var(--panel);
+        overflow: hidden;
+        margin-bottom: clamp(24px, 2.4vw, 34px);
+      }
+      .diagram-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 11px 16px;
+        border-bottom: 1px solid var(--panel-border);
+        background: var(--lane-fill);
+        flex-wrap: wrap;
+      }
+      .diagram-head .title {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--text);
+      }
+      .diagram-head .hint {
+        font-size: 11.5px;
+        color: var(--text-dim);
+      }
+      .diagram-head .open {
+        margin-left: auto;
+        font-size: 11.5px;
+        color: var(--text-muted);
+        text-decoration: none;
+        border: 1px solid var(--panel-border);
+        border-radius: 999px;
+        padding: 4px 12px;
+        background: var(--panel);
+      }
+      .diagram-head .open:hover {
+        color: var(--text);
+        border-color: var(--lane-stroke);
+      }
+      #diagram-frame {
+        display: block;
+        width: 100%;
+        height: clamp(360px, 46vh, 620px);
+        border: 0;
+        background: var(--panel);
+      }
+
+      /* ---------- 파이프라인 트랙 ---------- */
+      .track {
+        display: flex;
+        align-items: stretch;
+        gap: 0;
+        margin: 0 0 clamp(36px, 3.4vw, 52px);
+        flex-wrap: wrap;
+      }
+      .node {
+        flex: 1;
+        min-width: 236px;
+        background: var(--panel);
+        border: 1px solid var(--panel-border);
+        border-radius: var(--radius);
+        padding: clamp(14px, 1.3vw, 20px) clamp(16px, 1.5vw, 22px);
+        position: relative;
+        transition:
+          border-color 0.35s,
+          background 0.35s;
+      }
+      .node-head {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin-bottom: 5px;
+      }
+      .led {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--text-dim);
+        flex: none;
+      }
+      .node-name {
+        font-size: clamp(13.5px, 1vw, 15.5px);
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+      .node-desc {
+        font-size: 12.5px;
+        color: var(--text-dim);
+        margin-bottom: 9px;
+      }
+      .node-detail {
+        font-size: 13px;
+        color: var(--text-muted);
+        min-height: 19px;
+      }
+      .node-time {
+        font-size: 11.5px;
+        color: var(--text-dim);
+        margin-top: 8px;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .link {
+        width: clamp(24px, 2.6vw, 52px);
+        align-self: center;
+        height: 2px;
+        flex: none;
+        background: var(--panel-border);
+        position: relative;
+        overflow: hidden;
+        border-radius: 2px;
+      }
+      .link.flow {
+        background: rgba(5, 150, 105, 0.28);
+      }
+      .link.flow::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -40%;
+        width: 40%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--done),
+          transparent
+        );
+        animation: stream 1.6s linear infinite;
+      }
+      @keyframes stream {
+        to {
+          left: 100%;
+        }
+      }
+
+      .node.running {
+        border-color: rgba(217, 119, 6, 0.55);
+        background: rgba(251, 191, 36, 0.06);
+      }
+      .node.running .led {
+        background: var(--running);
+        animation: blink 1.3s ease-in-out infinite;
+      }
+      @keyframes blink {
+        50% {
+          opacity: 0.35;
+        }
+      }
+      .node.running .node-detail {
+        color: #b45309;
+      }
+      .node.done {
+        border-color: rgba(5, 150, 105, 0.42);
+      }
+      .node.done .led {
+        background: var(--done);
+      }
+      .node.done .node-detail {
+        color: var(--done);
+      }
+      .node.error {
+        border-color: rgba(225, 29, 72, 0.5);
+        background: rgba(225, 29, 72, 0.05);
+      }
+      .node.error .led {
+        background: var(--error);
+      }
+      .node.error .node-detail {
+        color: var(--error);
+      }
+
+      /* ---------- 결과 피드 (최신이 위) ---------- */
+      .feed-label {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 11.5px;
+        letter-spacing: 0.14em;
+        color: var(--text-dim);
+        font-weight: 600;
+        margin-bottom: 20px;
+      }
+      .feed-label::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--panel-border);
+      }
+
+      .stage-section {
+        margin-bottom: clamp(34px, 3.2vw, 52px);
+        animation: drop 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      }
+      @keyframes drop {
+        from {
+          opacity: 0;
+          transform: translateY(-12px);
+        }
+      }
+      .sec-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      .sec-badge {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        color: var(--accent);
+        border: 1px solid rgba(8, 145, 178, 0.3);
+        border-radius: 6px;
+        padding: 4px 9px;
+        background: rgba(34, 211, 238, 0.09);
+      }
+      .sec-head h2 {
+        font-size: clamp(15px, 1.15vw, 18px);
+        font-weight: 700;
+        margin: 0;
+        letter-spacing: -0.015em;
+      }
+      .sec-head .count {
+        margin-left: auto;
+        font-size: 12px;
+        color: var(--text-dim);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(440px, 100%), 1fr));
+        gap: clamp(14px, 1.3vw, 22px);
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--panel-border);
+        border-radius: var(--radius);
+        overflow: auto;
+      }
+      .card.new {
+        animation: drop 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      }
+      .card h3 {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--text);
+        margin: 0;
+        padding: 11px 16px;
+        border-bottom: 1px solid var(--panel-border);
+        background: var(--lane-fill);
+      }
+      .card .body {
+        padding: 12px 16px 14px;
+      }
+      .card img {
+        display: block;
+        width: 100%;
+        max-height: 36vh;
+        object-fit: contain;
+        background: #fff;
+      }
+
+      .card table {
+        border-collapse: collapse;
+        font-size: 12.5px;
+        width: 100%;
+      }
+      .card th {
+        text-align: left;
+        font-weight: 600;
+        color: var(--text-muted);
+        padding: 7px 10px;
+        border-bottom: 1px solid var(--lane-stroke);
+        white-space: nowrap;
+      }
+      .card td {
+        padding: 6px 10px;
+        border-bottom: 1px solid var(--panel-border);
+        color: var(--text);
+        max-width: 420px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+      .card tr:last-child td {
+        border-bottom: 0;
+      }
+      .card tr:hover td {
+        background: var(--lane-fill);
+      }
+      .card pre {
+        font-size: 12.5px;
+        color: var(--text-muted);
+        white-space: pre-wrap;
+        margin: 0;
+      }
+
+      .hint {
+        color: var(--text-dim);
+        font-size: 13.5px;
+        padding: 22px 0;
+      }
+      #updated {
+        position: fixed;
+        bottom: 14px;
+        right: 18px;
+        font-size: 11.5px;
+        color: var(--text-muted);
+        background: var(--panel);
+        padding: 5px 12px;
+        border-radius: 999px;
+        border: 1px solid var(--panel-border);
+        font-variant-numeric: tabular-nums;
+      }
+
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="overline">인하대학교 × 미추홀구청 관학협력 · LIVE</div>
+      <h1>미추홀구 유튜브 여론·민원 분석 파이프라인</h1>
+      <p class="lede">댓글 수집 → AI 감성·민원 분류 → 통계 검정</p>
+    </header>
+
+    <section class="diagram-panel">
+      <div class="diagram-head">
+        <span class="title">시스템 구조</span>
+        <span class="hint"
+          >노드 클릭 · 마우스 오버로 경로 추적 · 실행 중인 단계는 밝게 표시</span
+        >
+        <a
+          class="open"
+          href="docs/pipeline_architecture.diagram.ko.html?theme=light"
+          target="_blank"
+          rel="noopener"
+          >새 창에서 열기 ↗</a
+        >
+      </div>
+      <iframe
+        id="diagram-frame"
+        src="docs/pipeline_architecture.diagram.ko.html?theme=light"
+        title="미추홀구 댓글 분석 파이프라인 다이어그램"
+      ></iframe>
+    </section>
+
+    <div class="track" id="track"></div>
+
+    <div class="feed-label">분석 결과 — 최신순</div>
+    <div id="artifacts">
+      <div class="hint">
+        아직 표시할 결과물이 없습니다. 분석이 시작되면 이곳에 결과가 나타납니다.
+      </div>
+    </div>
+    <div id="updated"></div>
+
+    <script>
+      /* ---------- 다이어그램 실시간 하이라이트 ----------
+         노트북 단계(key) → 다이어그램 노드(data-node-id) 대응.
+         iframe 은 같은 출처(127.0.0.1)에서 서빙될 때만 접근 가능하므로,
+         file:// 로 직접 열면 조용히 건너뛴다(다이어그램 자체는 정상 동작). */
+      const STAGE_NODES = {
+        crawl: ["targets", "platform_apis", "collectors", "raw_store"],
+        analysis: ["pipeline", "sentiment", "gemini", "results_store"],
+        regression: ["regression", "dashboard"],
+      };
+      const LIVE_STYLE = `
+        [data-node-id][data-live="running"] {
+          filter: drop-shadow(0 0 10px rgba(217, 119, 6, 0.75));
+          animation: live-pulse 1.3s ease-in-out infinite;
+        }
+        [data-node-id][data-live="done"] {
+          filter: drop-shadow(0 0 6px rgba(5, 150, 105, 0.5));
+        }
+        [data-node-id][data-live="error"] {
+          filter: drop-shadow(0 0 9px rgba(225, 29, 72, 0.7));
+        }
+        @keyframes live-pulse { 50% { opacity: 0.65; } }
+      `;
+      let diagramStyled = false;
+      let diagramSnapshot = null;
+
+      function diagramDoc() {
+        try {
+          const doc = document.getElementById("diagram-frame").contentDocument;
+          if (!doc || !doc.querySelector("[data-node-id]")) return null;
+          if (!diagramStyled) {
+            const st = doc.createElement("style");
+            st.textContent = LIVE_STYLE;
+            doc.head.appendChild(st);
+            // 대시보드와 같은 라이트 테마로 고정 (툴바 토글은 그대로 동작).
+            doc.documentElement.setAttribute("data-theme", "light");
+            diagramStyled = true;
+          }
+          return doc;
+        } catch (e) {
+          return null; // 다른 출처 — file:// 로 연 경우
+        }
+      }
+
+      function paintDiagram(stages) {
+        const snap = JSON.stringify(stages.map((s) => [s.key, s.status]));
+        if (snap === diagramSnapshot && diagramStyled) return;
+        const doc = diagramDoc();
+        if (!doc) return;
+        diagramSnapshot = snap;
+        doc
+          .querySelectorAll("[data-node-id][data-live]")
+          .forEach((el) => el.removeAttribute("data-live"));
+        stages.forEach((s) => {
+          if (s.status === "pending") return;
+          (STAGE_NODES[s.key] || []).forEach((id) => {
+            doc
+              .querySelectorAll(`[data-node-id="${id}"]`)
+              .forEach((el) => el.setAttribute("data-live", s.status));
+          });
+        });
+      }
+
+      const secSnapshots = {};
+      let trackSnapshot = null;
+      let hintCleared = false;
+      const seenCards = new Set();
+
+      function cardHTML(stageKey, a, idx) {
+        const id = stageKey + ":" + idx;
+        const isNew = !seenCards.has(id);
+        seenCards.add(id);
+        const body =
+          a.type === "image"
+            ? `<img src="${a.path}" loading="lazy">`
+            : `<div class="body">${a.html}</div>`;
+        return `<div class="card ${isNew ? "new" : ""}"><h3>${a.title || ""}</h3>${body}</div>`;
+      }
+
+      function renderTrack(stages) {
+        const snap = JSON.stringify(
+          stages.map((s) => [s.status, s.detail, s.elapsed]),
+        );
+        if (snap === trackSnapshot) return;
+        trackSnapshot = snap;
+        document.getElementById("track").innerHTML = stages
+          .map((s, i) => {
+            const node = `<div class="node ${s.status}">
+              <div class="node-head"><span class="led"></span>
+                <span class="node-name">${s.name.replace(/^\d+\.\s*/, "")}</span></div>
+              <div class="node-desc">${s.desc}</div>
+              <div class="node-detail">${s.detail || "대기 중"}</div>
+              <div class="node-time">${s.elapsed != null ? s.elapsed + "초 소요" : ""}</div>
+            </div>`;
+            const link =
+              i < stages.length - 1
+                ? `<div class="link ${s.status === "done" ? "flow" : ""}"></div>`
+                : "";
+            return node + link;
+          })
+          .join("");
+      }
+
+      function ensureSection(s, idx) {
+        const snap = JSON.stringify(s.artifacts);
+        if (secSnapshots[s.key] === snap) return;
+        const isNewSection = !(s.key in secSnapshots);
+        secSnapshots[s.key] = snap;
+
+        const container = document.getElementById("artifacts");
+        if (!hintCleared) {
+          container.innerHTML = "";
+          hintCleared = true;
+        }
+
+        let sec = document.getElementById("sec-" + s.key);
+        if (!sec) {
+          sec = document.createElement("section");
+          sec.className = "stage-section";
+          sec.id = "sec-" + s.key;
+          container.prepend(sec); // ★ 새 단계는 맨 위로
+        }
+        // 카드도 최신이 먼저 오도록 역순 배치
+        const cards = [...s.artifacts]
+          .map((a, i) => ({ a, i }))
+          .reverse()
+          .map(({ a, i }) => cardHTML(s.key, a, i))
+          .join("");
+        sec.innerHTML = `
+          <div class="sec-head">
+            <span class="sec-badge">STAGE ${idx + 1}</span>
+            <h2>${s.name.replace(/^\d+\.\s*/, "")}</h2>
+            <span class="count">산출물 ${s.artifacts.length}건</span>
+          </div>
+          <div class="grid">${cards}</div>`;
+        if (isNewSection) window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      async function tick() {
+        try {
+          const r = await fetch("pipeline_status.json?t=" + Date.now());
+          const d = await r.json();
+          document.getElementById("updated").textContent =
+            "최근 갱신 " + d.updated;
+          renderTrack(d.stages);
+          paintDiagram(d.stages);
+          d.stages.forEach((s, i) => {
+            if ((s.artifacts || []).length) ensureSection(s, i);
+            else {
+              const old = document.getElementById("sec-" + s.key);
+              if (old) {
+                old.remove();
+                delete secSnapshots[s.key];
+              }
+            }
+          });
+        } catch (e) {
+          /* 상태 파일 생성 전 */
+        }
+      }
+      setInterval(tick, 700);
+      tick();
+    </script>
+  </body>
+</html>
