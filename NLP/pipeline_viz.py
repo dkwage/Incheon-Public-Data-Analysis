@@ -146,6 +146,16 @@ class _QuietHandler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *args, **kwargs):  # 접근 로그 출력 안 함
         pass
 
+    def end_headers(self):
+        # 대시보드·다이어그램을 고쳐도 브라우저가 304로 옛 파일을 재사용하지 않게 한다.
+        self.send_header("Cache-Control", "no-store, must-revalidate")
+        super().end_headers()
+
+    def send_header(self, keyword, value):
+        if keyword.lower() == "last-modified":   # 조건부 요청 자체를 막는다
+            return
+        super().send_header(keyword, value)
+
 
 _server = None  # 중복 실행 방지
 
