@@ -4,3 +4,12 @@ __pycache__/
 *.pyc
 .DS_Store
 insta_session.json
+youtube_results.csv
+YT.csv
+IG.csv
+michuhol_analysis_raw.csv
+michuhol_negative_comments.csv
+michuhol_performance_report.csv
+michuhol_positive_comments.csv
+hypothesis_test_by_title.csv
+michuhol_positive_crosstab.csv
