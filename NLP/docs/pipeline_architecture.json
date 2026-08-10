@@ -1,0 +1,353 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Michuhol Comment Analysis Pipeline",
+    "subtitle": "Runtime components, external services, and the local trust boundary",
+    "quality_profile": "showcase",
+    "viewBox": [
+      2130,
+      700
+    ],
+    "repository": {
+      "url": "https://github.com/dkwage/Incheon-Public-Data-Analysis",
+      "revision": "40f8affa6e884713ffdf5736d55737ed88fb6729"
+    },
+    "views": [
+      {
+        "id": "collection",
+        "label": "Comment collection",
+        "focus": [
+          "targets",
+          "collectors",
+          "platform_apis",
+          "raw_store"
+        ],
+        "note": "Target link lists drive the collectors that call platform APIs and write raw CSV."
+      },
+      {
+        "id": "classification",
+        "label": "Sentiment and complaint labeling",
+        "focus": [
+          "raw_store",
+          "pipeline",
+          "sentiment",
+          "gemini",
+          "results_store"
+        ],
+        "note": "Local KoELECTRA splits sentiment; Gemini labels complaints and positive types."
+      },
+      {
+        "id": "reporting",
+        "label": "Statistics and reporting",
+        "focus": [
+          "results_store",
+          "regression",
+          "dashboard"
+        ],
+        "note": "Result CSVs feed OLS/permutation/logit analysis and the demo dashboard."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "platform_apis",
+      "type": "external",
+      "label": "Social platform APIs",
+      "sublabel": "YouTube Data API v3 · Instagram private API",
+      "pos": [
+        430,
+        110
+      ],
+      "size": [
+        200,
+        64
+      ],
+      "tag": "quota + credentials"
+    },
+    {
+      "id": "gemini",
+      "type": "external",
+      "label": "Google Gemini",
+      "sublabel": "gemini-3.1-flash-lite",
+      "pos": [
+        1140,
+        110
+      ],
+      "size": [
+        200,
+        64
+      ],
+      "tag": "15 RPM / 500 RPD"
+    },
+    {
+      "id": "targets",
+      "type": "database",
+      "label": "Target lists",
+      "sublabel": "data/YT.csv, data/IG.csv",
+      "pos": [
+        40,
+        333
+      ],
+      "size": [
+        180,
+        64
+      ]
+    },
+    {
+      "id": "collectors",
+      "type": "backend",
+      "label": "Comment collectors",
+      "sublabel": "polars, checkpointed, rate-paced",
+      "pos": [
+        380,
+        330
+      ],
+      "size": [
+        300,
+        70
+      ],
+      "sources": [
+        {
+          "path": "NLP/src/crawl_YT.py",
+          "line": 53,
+          "label": "get_youtube_comments"
+        },
+        {
+          "path": "NLP/src/crwal_IG.py",
+          "line": 61,
+          "label": "get_instagram_comments"
+        }
+      ]
+    },
+    {
+      "id": "raw_store",
+      "type": "database",
+      "label": "Raw comment CSV",
+      "sublabel": "data/youtube_results.csv",
+      "pos": [
+        820,
+        333
+      ],
+      "size": [
+        200,
+        64
+      ]
+    },
+    {
+      "id": "pipeline",
+      "type": "backend",
+      "label": "Analysis pipeline",
+      "sublabel": "event filter, routing, aggregation",
+      "pos": [
+        1140,
+        325
+      ],
+      "size": [
+        200,
+        80
+      ],
+      "tag": "entrypoint",
+      "sources": [
+        {
+          "path": "NLP/src/complaint_analysis.py",
+          "line": 291,
+          "label": "run_pipeline"
+        }
+      ]
+    },
+    {
+      "id": "sentiment",
+      "type": "backend",
+      "label": "KoELECTRA sentiment",
+      "sublabel": "transformers on MPS / CPU",
+      "pos": [
+        1140,
+        520
+      ],
+      "size": [
+        200,
+        64
+      ]
+    },
+    {
+      "id": "results_store",
+      "type": "database",
+      "label": "Results + figures",
+      "sublabel": "results/*.csv, figures/*.png",
+      "pos": [
+        1480,
+        333
+      ],
+      "size": [
+        200,
+        64
+      ]
+    },
+    {
+      "id": "regression",
+      "type": "backend",
+      "label": "Statistical analysis",
+      "sublabel": "OLS, permutation, logit OR",
+      "pos": [
+        1840,
+        333
+      ],
+      "size": [
+        200,
+        64
+      ],
+      "sources": [
+        {
+          "path": "NLP/src/regression.py",
+          "line": 346,
+          "label": "analysis script body"
+        }
+      ]
+    },
+    {
+      "id": "dashboard",
+      "type": "frontend",
+      "label": "Demo dashboard",
+      "sublabel": "localhost:8765, status polling",
+      "pos": [
+        1480,
+        520
+      ],
+      "size": [
+        200,
+        64
+      ],
+      "sources": [
+        {
+          "path": "NLP/pipeline_viz.py",
+          "line": 152,
+          "label": "start_dashboard"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "external services / internet",
+      "wraps": [
+        "platform_apis",
+        "gemini"
+      ]
+    },
+    {
+      "kind": "security-group",
+      "label": "local workstation — .env secrets, no inbound traffic",
+      "wraps": [
+        "targets",
+        "collectors",
+        "raw_store",
+        "pipeline",
+        "sentiment",
+        "results_store",
+        "regression",
+        "dashboard"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "targets",
+      "to": "collectors",
+      "label": "URL list",
+      "variant": "emphasis"
+    },
+    {
+      "from": "collectors",
+      "to": "platform_apis",
+      "label": "API keys",
+      "variant": "security"
+    },
+    {
+      "from": "collectors",
+      "to": "raw_store",
+      "label": "comments",
+      "variant": "emphasis"
+    },
+    {
+      "from": "raw_store",
+      "to": "pipeline",
+      "label": "load",
+      "variant": "emphasis"
+    },
+    {
+      "from": "pipeline",
+      "to": "gemini",
+      "label": "JSON prompts",
+      "variant": "security"
+    },
+    {
+      "from": "pipeline",
+      "to": "sentiment",
+      "label": "comment text",
+      "labelDy": 24
+    },
+    {
+      "from": "pipeline",
+      "to": "results_store",
+      "label": "labeled rows",
+      "variant": "emphasis"
+    },
+    {
+      "from": "results_store",
+      "to": "regression",
+      "label": "raw CSV",
+      "variant": "emphasis"
+    },
+    {
+      "from": "results_store",
+      "to": "dashboard",
+      "label": "figures",
+      "variant": "dashed",
+      "labelDy": 24
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Primary path",
+      "items": [
+        "Target list rows drive per-video and per-post comment collection",
+        "Raw CSV is deduped and merged with topic/content metadata by title",
+        "Each comment is event-filtered, sentiment-split, then labeled",
+        "Labeled rows, crosstabs, and wordclouds land in results/ and figures/"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Routing inside the pipeline",
+      "items": [
+        "Event keyword match short-circuits analysis — no model call",
+        "Negative comments: one Gemini call each for is_complaint / type / summary",
+        "Positive comments: Kiwi top-80 keywords, one Gemini call, priority keyword match",
+        "Gemini wrapper retries 429/503 three times and sleeps ~4.5s per call"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Trust boundaries and secrets",
+      "items": [
+        "All compute is local; only the loopback dashboard server listens (127.0.0.1:8765)",
+        "GEMINI_API_KEY, YOUTUBE_API_KEY, INSTA_USERNAME/PASSWORD load from .env or environment",
+        "Instagram session cookies are cached to insta_session.json on disk",
+        "Comment text and author names leave the machine only toward Gemini"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Supporting runtime detail",
+      "items": [
+        "Hugging Face Hub login is optional (HUGGINGFACE_TOKEN) for model download",
+        "Torch device auto-selects MPS on Apple Silicon, else CPU",
+        "Collectors checkpoint to CSV every 5 videos / 3 posts; Instagram sleeps 15-30s per post",
+        "regression.py reads michuhol_analysis_raw.csv, writes 7 result CSVs and 2 figures"
+      ]
+    }
+  ]
+}
