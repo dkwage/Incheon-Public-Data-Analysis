@@ -4501,8 +4501,8 @@
       <p class="subtitle">실행 구성요소, 외부 서비스, 그리고 로컬 신뢰 경계</p>
     </div>
 
-    <script id="archify-guided-views-data" type="application/json">[{"id":"collection","label":"댓글 수집","focus":["targets","collectors","platform_apis","raw_store"],"note":"대상 링크 목록이 수집기를 실행해 플랫폼 API를 호출하고 원본 CSV를 기록합니다."},{"id":"classification","label":"감성·민원 라벨링","focus":["raw_store","pipeline","sentiment","gemini","results_store"],"note":"로컬 KoELECTRA가 긍정·부정을 나누고, Gemini가 민원 여부와 긍정 유형을 분류합니다."},{"id":"reporting","label":"통계 분석과 보고","focus":["results_store","regression","dashboard"],"note":"결과 CSV가 OLS·순열검정·로지스틱 분석과 데모 대시보드로 이어집니다."}]</script>
-    <script id="archify-source-evidence-data" type="application/json">{"schemaVersion":1,"verified":true,"repository":{"url":"https://github.com/dkwage/Incheon-Public-Data-Analysis","revision":"40f8affa6e884713ffdf5736d55737ed88fb6729","shortRevision":"40f8aff"},"referenceCount":5,"nodes":{"collectors":[{"path":"NLP/src/crawl_YT.py","line":53,"label":"get_youtube_comments","href":"https://github.com/dkwage/Incheon-Public-Data-Analysis/blob/40f8affa6e884713ffdf5736d55737ed88fb6729/NLP/src/crawl_YT.py#L53"},{"path":"NLP/src/crwal_IG.py","line":61,"label":"get_instagram_comments","href":"https://github.com/dkwage/Incheon-Public-Data-Analysis/blob/40f8affa6e884713ffdf5736d55737ed88fb6729/NLP/src/crwal_IG.py#L61"}],"pipeline":[{"path":"NLP/src/complaint_analysis.py","line":291,"label":"run_pipeline","href":"https://github.com/dkwage/Incheon-Public-Data-Analysis/blob/40f8affa6e884713ffdf5736d55737ed88fb6729/NLP/src/complaint_analysis.py#L291"}],"regression":[{"path":"NLP/src/regression.py","line":346,"label":"analysis script body","href":"https://github.com/dkwage/Incheon-Public-Data-Analysis/blob/40f8affa6e884713ffdf5736d55737ed88fb6729/NLP/src/regression.py#L346"}],"dashboard":[{"path":"NLP/pipeline_viz.py","line":152,"label":"start_dashboard","href":"https://github.com/dkwage/Incheon-Public-Data-Analysis/blob/40f8affa6e884713ffdf5736d55737ed88fb6729/NLP/pipeline_viz.py#L152"}]}}</script>
+    <script id="archify-guided-views-data" type="application/json">[{"id":"collection","label":"댓글 수집","focus":["targets","collectors","platform_apis","raw_store"],"note":"대상 링크 목록이 수집기를 실행해 플랫폼 API를 호출하고 원본 CSV를 기록합니다."},{"id":"classification","label":"감성·민원 라벨링","focus":["raw_store","pipeline","sentiment","gemini","results_store"],"note":"로컬 KoELECTRA가 긍정·부정을 나누고, Gemini가 민원 여부와 긍정 유형을 분류합니다."},{"id":"reporting","label":"통계 분석과 보고","focus":["results_store","regression"],"note":"결과 CSV가 OLS·순열검정·로지스틱 분석으로 이어집니다."}]</script>
+    <script id="archify-source-evidence-data" type="application/json">{"schemaVersion":1,"verified":true,"repository":{"url":"https://github.com/dkwage/Incheon-Public-Data-Analysis","revision":"40f8affa6e884713ffdf5736d55737ed88fb6729","shortRevision":"40f8aff"},"referenceCount":4,"nodes":{"collectors":[{"path":"NLP/src/crawl_YT.py","line":53,"label":"get_youtube_comments","href":"https://github.com/dkwage/Incheon-Public-Data-Analysis/blob/40f8affa6e884713ffdf5736d55737ed88fb6729/NLP/src/crawl_YT.py#L53"},{"path":"NLP/src/crwal_IG.py","line":61,"label":"get_instagram_comments","href":"https://github.com/dkwage/Incheon-Public-Data-Analysis/blob/40f8affa6e884713ffdf5736d55737ed88fb6729/NLP/src/crwal_IG.py#L61"}],"pipeline":[{"path":"NLP/src/complaint_analysis.py","line":291,"label":"run_pipeline","href":"https://github.com/dkwage/Incheon-Public-Data-Analysis/blob/40f8affa6e884713ffdf5736d55737ed88fb6729/NLP/src/complaint_analysis.py#L291"}],"regression":[{"path":"NLP/src/regression.py","line":346,"label":"analysis script body","href":"https://github.com/dkwage/Incheon-Public-Data-Analysis/blob/40f8affa6e884713ffdf5736d55737ed88fb6729/NLP/src/regression.py#L346"}]}}</script>
     <div class="guided-views no-print" id="guided-views" hidden aria-label="Guided diagram views">
       <button id="guided-view-prev" type="button" aria-label="Previous guided view" title="Previous guided view ([)">&#8592;</button>
       <div class="guided-view-copy">
@@ -4585,7 +4585,6 @@
         <path data-edge-from="pipeline" data-edge-to="sentiment" data-edge-label="comment text" data-edge-key="5" data-composition-points="1240,405;1240,520" d="M 1240 405 L 1240 520" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
         <path data-edge-from="pipeline" data-edge-to="results_store" data-edge-label="labeled rows" data-edge-key="6" data-composition-points="1340,365;1480,365" d="M 1340 365 L 1480 365" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
         <path data-edge-from="results_store" data-edge-to="regression" data-edge-label="raw CSV" data-edge-key="7" data-composition-points="1680,365;1840,365" d="M 1680 365 L 1840 365" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path data-edge-from="results_store" data-edge-to="dashboard" data-edge-label="figures" data-edge-key="8" data-composition-points="1580,397;1580,520" d="M 1580 397 L 1580 520" class="a-dashed" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
 
         <!-- Components -->
         <g id="node-platform_apis" data-node-id="platform_apis" data-node-label="Social platform APIs" tabindex="0" role="button" aria-label="Focus Social platform APIs, YouTube Data API v3 · Instagram private API, external services / internet" aria-pressed="false" data-node-kind="external" data-node-sublabel="YouTube Data API v3 · Instagram private API" data-node-tag="quota + credentials" data-node-context="external services / internet">
@@ -4695,19 +4694,6 @@
         <text data-detail="context" x="1940" y="379" class="t-muted" font-size="9" text-anchor="middle">OLS, 순열검정, 로지스틱 오즈비</text>
         </g>
 
-        <g id="node-dashboard" data-node-id="dashboard" data-node-label="Demo dashboard" tabindex="0" role="button" aria-label="Focus Demo dashboard, localhost:8765, status polling, local workstation — .env secrets, no inbound traffic" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="localhost:8765, status polling" data-node-context="local workstation — .env secrets, no inbound traffic">
-          <title>데모 대시보드 · localhost:8765, 상태 폴링 · 로컬 PC — .env 비밀키, 인바운드 트래픽 없음</title>
-          <rect x="1480" y="520" width="200" height="64" rx="6" class="c-mask"/>
-          <rect x="1480" y="520" width="200" height="64" rx="6" class="c-frontend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="frontend" class="semantic-sigil s-frontend" transform="translate(1486 526) scale(0.6875)">
-            <rect x="2" y="3" width="12" height="10" rx="2"/>
-            <path d="M2 6.5h12"/>
-            <circle cx="4.1" cy="4.8" r=".7" class="sigil-fill"/>
-            <circle cx="6.3" cy="4.8" r=".7" class="sigil-fill"/>
-          </g>
-          <text data-detail-anchor x="1580" y="550" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">데모 대시보드</text>
-        <text data-detail="context" x="1580" y="566" class="t-muted" font-size="9" text-anchor="middle">localhost:8765, 상태 폴링</text>
-        </g>
 
         <!-- Connection labels -->
         <g data-detail="context" data-edge-from="targets" data-edge-to="collectors" data-edge-label="URL list" data-edge-key="0">
@@ -4741,10 +4727,6 @@
         <g data-detail="context" data-edge-from="results_store" data-edge-to="regression" data-edge-label="raw CSV" data-edge-key="7">
           <rect x="1738.2" y="345" width="43.6" height="14" rx="3" class="c-mask"/>
           <text x="1760" y="355" class="t-backend" font-size="8" text-anchor="middle">원본 CSV</text>
-        </g>
-        <g data-detail="context" data-edge-from="results_store" data-edge-to="dashboard" data-edge-label="figures" data-edge-key="8">
-          <rect x="1558.2" y="401" width="43.6" height="14" rx="3" class="c-mask"/>
-          <text x="1580" y="411" class="t-messagebus" font-size="8" text-anchor="middle">그림</text>
         </g>
 
         <!-- Legend -->
