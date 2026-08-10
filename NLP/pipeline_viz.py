@@ -13,7 +13,7 @@ from pathlib import Path
 from IPython.display import display, HTML
 
 STATUS_FILE = Path("pipeline_status.json")
-DIAGRAM_PATH = "docs/pipeline_architecture.diagram.ko.html"
+DIAGRAM_PATH = "docs/pipeline_architecture.diagram.ko.html?theme=light"
 
 COLORS = {
     "pending": ("#e2e8f0", "#64748b"),

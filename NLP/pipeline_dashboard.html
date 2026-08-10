@@ -408,29 +408,6 @@
         font-variant-numeric: tabular-nums;
       }
 
-      /* 다이어그램과 같은 방식으로 시스템 다크 모드도 따라간다. */
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --bg: #020617;
-          --panel: rgba(15, 23, 42, 0.72);
-          --panel-border: rgba(148, 163, 184, 0.18);
-          --lane-fill: rgba(30, 41, 59, 0.45);
-          --lane-stroke: rgba(148, 163, 184, 0.3);
-          --text: #e2e8f0;
-          --text-muted: #94a3b8;
-          --text-dim: #64748b;
-          --accent: #22d3ee;
-          --done: #34d399;
-          --running: #fbbf24;
-          --error: #f87171;
-        }
-        .node.running .node-detail {
-          color: var(--running);
-        }
-        .card img {
-          background: #f8fafc;
-        }
-      }
     </style>
   </head>
   <body>
@@ -448,7 +425,7 @@
         >
         <a
           class="open"
-          href="docs/pipeline_architecture.diagram.ko.html"
+          href="docs/pipeline_architecture.diagram.ko.html?theme=light"
           target="_blank"
           rel="noopener"
           >새 창에서 열기 ↗</a
@@ -456,7 +433,7 @@
       </div>
       <iframe
         id="diagram-frame"
-        src="docs/pipeline_architecture.diagram.ko.html"
+        src="docs/pipeline_architecture.diagram.ko.html?theme=light"
         title="미추홀구 댓글 분석 파이프라인 다이어그램"
       ></iframe>
     </section>
@@ -505,14 +482,8 @@
             const st = doc.createElement("style");
             st.textContent = LIVE_STYLE;
             doc.head.appendChild(st);
-            // 대시보드와 같은 테마로 맞춘다 (다이어그램 자체 토글은 그대로 동작).
-            const dark = window.matchMedia(
-              "(prefers-color-scheme: dark)",
-            ).matches;
-            doc.documentElement.setAttribute(
-              "data-theme",
-              dark ? "dark" : "light",
-            );
+            // 대시보드와 같은 라이트 테마로 고정 (툴바 토글은 그대로 동작).
+            doc.documentElement.setAttribute("data-theme", "light");
             diagramStyled = true;
           }
           return doc;
