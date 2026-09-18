@@ -1,0 +1,26 @@
+# Credentials and machine-local files
+.env
+.env.*
+!.env.example
+*credentials*
+*secrets*
+*.pem
+*.key
+sample.ipynb
+.DS_Store
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.claude/
+.codex/
+.agents/
+*.log
+
+# Local datasets and generated exports may contain identifiers or contact details.
+/data/*
+!/data/inha_boundary.geojson
+/outputs/
+/private/
+/confidential/
